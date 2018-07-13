@@ -18,6 +18,7 @@ package org.openkilda.floodlight.kafka;
 import org.openkilda.floodlight.command.ping.PingResponseCommandFactoryImpl;
 import org.openkilda.floodlight.config.KafkaFloodlightConfig;
 import org.openkilda.floodlight.config.provider.ConfigurationProvider;
+import org.openkilda.floodlight.service.CommandProcessorService;
 import org.openkilda.floodlight.service.ConfigService;
 import org.openkilda.floodlight.service.PingService;
 import org.openkilda.floodlight.service.batch.OfBatchService;
@@ -50,10 +51,12 @@ public class KafkaMessageCollector implements IFloodlightModule {
     private final CommandContextFactory commandContextFactory = new CommandContextFactory();
 
     private final ConfigService configService = new ConfigService();
+    private final CommandProcessorService commandProcessor;
     private final OfBatchService ofBatchService;
     private final PingService pingService;
 
     public KafkaMessageCollector() {
+        commandProcessor = new CommandProcessorService(commandContextFactory);
         ofBatchService = new OfBatchService(commandContextFactory);
         pingService = new PingService(commandContextFactory);
     }
@@ -61,6 +64,7 @@ public class KafkaMessageCollector implements IFloodlightModule {
     @Override
     public Collection<Class<? extends IFloodlightService>> getModuleServices() {
         return ImmutableList.of(
+                CommandProcessorService.class,
                 ConfigService.class,
                 OfBatchService.class,
                 PingService.class);
@@ -69,6 +73,7 @@ public class KafkaMessageCollector implements IFloodlightModule {
     @Override
     public Map<Class<? extends IFloodlightService>, IFloodlightService> getServiceImpls() {
         return ImmutableMap.of(
+                CommandProcessorService.class, commandProcessor,
                 OfBatchService.class, ofBatchService,
                 PingService.class, pingService,
                 ConfigService.class, configService);
@@ -89,6 +94,7 @@ public class KafkaMessageCollector implements IFloodlightModule {
 
     @Override
     public void init(FloodlightModuleContext context) throws FloodlightModuleException {
+        commandProcessor.init(context);
         commandContextFactory.init(context);
     }
 
